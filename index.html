@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ratemetalk.lol</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,800&family=Lilita+One&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0A0A0A; --y:#FFD93B; --o:#FF8A2B; --w:#F5F5F0; --mute:#8C8C8C; --line:#2A2A2A; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--w); font-family:'Bricolage Grotesque',system-ui,sans-serif; font-weight:500; min-height:100dvh; display:flex; justify-content:center; padding:22px 20px 40px; }
+  .app { width:100%; max-width:420px; }
+  .screen { display:none; } .screen.active { display:block; }
+  .brand { font-family:'Lilita One',sans-serif; font-size:28px; text-align:center; margin-bottom:6px; }
+  .brand b { color:var(--o); font-weight:400; }
+  .duck { display:flex; justify-content:center; margin:6px 0 4px; }
+  h1 { font-family:'Lilita One',sans-serif; font-weight:400; font-size:38px; line-height:1.05; text-align:center; margin-bottom:10px; }
+  .sub { color:var(--mute); text-align:center; font-size:15px; line-height:1.4; margin-bottom:22px; }
+  button { font:inherit; border:none; cursor:pointer; color:inherit; }
+  .topic { display:block; width:100%; text-align:left; background:#161616; border:2px solid var(--line); border-radius:16px; padding:15px 18px; margin-bottom:10px; font-size:16px; line-height:1.35; }
+  .topic:active, .topic:focus-visible { border-color:var(--y); outline:none; }
+  .topic.free { background:transparent; border-style:dashed; border-color:var(--y); color:var(--y); font-weight:800; text-align:center; }
+  .link { background:none; color:var(--mute); font-size:14px; display:block; margin:2px auto 14px; padding:6px; }
+  .btn { width:100%; background:var(--y); color:#0A0A0A; font-weight:800; font-size:17px; padding:16px; border-radius:16px; margin-top:12px; box-shadow:0 5px 0 var(--o); }
+  .btn:active { transform:translateY(3px); box-shadow:0 2px 0 var(--o); }
+  .btn.ghost { background:transparent; color:var(--mute); box-shadow:none; font-weight:500; }
+  .echo { font-family:'Lilita One',sans-serif; font-size:26px; line-height:1.15; text-align:center; margin:8px 0 26px; }
+  .rec { width:128px; height:128px; border-radius:50%; background:var(--y); margin:0 auto; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 0 var(--o); }
+  .rec i { width:38px; height:38px; border-radius:50%; background:#0A0A0A; display:block; }
+  .rec.on { background:#FF4B4B; box-shadow:0 6px 0 #8a1f1f; animation:pulse 1.3s infinite; } .rec.on i { border-radius:8px; background:#fff; width:32px; height:32px; }
+  @keyframes pulse { 0%{outline:0 solid rgba(255,75,75,.5)} 100%{outline:26px solid rgba(255,75,75,0)} }
+  .timer { font-family:'Lilita One',sans-serif; font-size:48px; text-align:center; margin-top:20px; font-variant-numeric:tabular-nums; }
+  .hint { color:var(--mute); font-size:14px; text-align:center; margin-top:4px; }
+  .load-line { font-family:'Lilita One',sans-serif; font-size:28px; text-align:center; margin-top:10px; min-height:70px; }
+  .wob { animation:wob .7s ease-in-out infinite; } @keyframes wob { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+  #cardimg { width:100%; border-radius:18px; display:block; }
+  .err { background:#2A1616; border:1px solid #FF4B4B; color:#FF9B9B; padding:12px 14px; border-radius:12px; font-size:14px; margin-top:14px; } .err:empty { display:none; }
+  @media (prefers-reduced-motion:reduce){ .rec.on,.wob{animation:none} }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="screen active" id="s-pick">
+    <div class="brand">rateme<b>talk</b>.lol</div>
+    <div class="duck" id="d-pick"></div>
+    <h1>Talk for 60 seconds. Get rated.</h1>
+    <p class="sub">Pick a topic and say anything. We score how you come across and tell you which type you are.</p>
+    <div id="topics"></div>
+    <button class="link" id="shuffle">Shuffle topics</button>
+    <button class="topic free" id="free-btn">Pick your own topic</button>
+  </div>
+
+  <div class="screen" id="s-rec">
+    <div class="brand">rateme<b>talk</b>.lol</div>
+    <div class="duck" id="d-rec"></div>
+    <div class="echo" id="echo"></div>
+    <button class="rec" id="rec" aria-label="Start or stop recording"><i></i></button>
+    <div class="timer" id="timer">0:00</div>
+    <div class="hint" id="hint">Tap to start. Talk for 20 to 60 seconds.</div>
+  </div>
+
+  <div class="screen" id="s-load">
+    <div class="brand">rateme<b>talk</b>.lol</div>
+    <div class="duck wob" id="d-load" style="margin-top:12vh"></div>
+    <div class="load-line" id="load-line"></div>
+  </div>
+
+  <div class="screen" id="s-res">
+    <img id="cardimg" alt="Your ratemetalk card">
+    <button class="btn" id="share">Share your card</button>
+    <button class="btn ghost" id="again">Go again</button>
+  </div>
+
+  <div class="err" id="err"></div>
+</div>
+
+<script>
+// Change this to your Render URL before deploying
+const BACKEND_URL = "http://127.0.0.1:8001";
+
+const POOL = [
+ "Defend your most controversial food opinion","Describe your dream vacation like a luxury ad","What's your weirdest hot take? Go all in",
+ "Describe the perfect day if money was no object","Rant about something that annoys you for no good reason","Sell us your favorite food like a Super Bowl ad",
+ "You get one superpower. Explain how you'd misuse it","Describe your hometown to someone who's never been","Why would your friend group survive a zombie apocalypse? Or why wouldn't it?",
+ "Convince us your favorite movie is the best ever made","Pitch the most useless invention you can think of","Explain your morning routine like a nature documentary",
+ "Roast the worst fashion trend you've ever seen","Tell us about the best meal of your life","What's the most overrated thing in the world?",
+ "Argue that your favorite season is the only good one","Describe your dream house to an architect who doesn't care","Give a toast to your favorite snack",
+ "You're a tour guide for the worst city ever. Sell it","Explain a hobby of yours to someone who thinks it's pointless","Tell us your most irrational fear and defend it",
+ "Describe your ideal weekend, hour by hour","Convince us cereal is a soup","Hype up the most boring object near you",
+ "What would you do with a billion dollars and 24 hours?","Defend your guilty pleasure song","Give a motivational speech to someone about to do laundry",
+ "Why is your favorite animal better than everyone else's?","Describe your worst haircut like a tragedy","Tell us the last thing that made you laugh way too hard",
+ "Explain the rules of a made-up sport","Rate every pizza topping and defend your ranking","You're running for president of your friend group. Give your speech",
+ "What's the best invention of all time and why?","Describe your dream job that doesn't exist yet","Tell us why mornings are a scam",
+ "What's a small thing that instantly ruins your day?","Describe the vibe of your room to a stranger","Explain the internet to someone from 1850",
+ "Tell us about the best trip you've ever taken","Argue for the most pointless holiday you can invent"
+];
+const TIER = { Common:{c:"#9A9A9A",pct:34}, Rare:{c:"#4DA3FF",pct:27}, Epic:{c:"#A78BFF",pct:18}, Legendary:{c:"#FFD93B",pct:10}, Secret:{c:"#FF6BD6",pct:2} };
+const MOOD = {
+ "The Unbothered Main Character":"zen","The Quiet Luxury":"zen",
+ "The Rizzler":"smug","The Sigma":"smug","The Certified Cook":"smug","The Final Boss":"smug","The Gatekeeper":"smug",
+ "The Professional Fumbler":"panic","The Crashout":"panic","The Chat Is This Real":"panic",
+ "The NPC":"blank","The Corporate Drone":"blank",
+ "The D1 Yapper":"hype","The Wannabe Influencer":"hype","The Gym Bro":"hype","The Hypebeast":"hype","The Chronically Online":"hype"
+};
+
+// ---- the duck (one SVG, five expressions) ----
+function duck(m,size){
+  const K="#111", Y="#FFD93B", st=`stroke="${K}" stroke-width="6" stroke-linejoin="round"`;
+  const wide=`<g stroke="${K}" stroke-width="4" fill="#fff"><circle cx="80" cy="80" r="11"/><circle cx="120" cy="80" r="11"/></g>`;
+  const eyes={
+    zen:`<path d="M70 80q10 9 20 0M110 80q10 9 20 0" fill="none" stroke="${K}" stroke-width="5" stroke-linecap="round"/>`,
+    smug:`<g fill="${K}"><ellipse cx="80" cy="85" rx="7" ry="5.5"/><ellipse cx="120" cy="85" rx="7" ry="5.5"/></g><path d="M67 77h26M107 77h26" stroke="${K}" stroke-width="6" stroke-linecap="round"/>`,
+    hype:wide+`<g fill="${K}"><circle cx="82" cy="79" r="5"/><circle cx="118" cy="79" r="5"/></g>`,
+    panic:wide+`<g fill="${K}"><circle cx="80" cy="80" r="3"/><circle cx="120" cy="80" r="3"/></g><path d="M152 38q9 15 0 22q-9-7 0-22z" fill="#7CC8FF" stroke="${K}" stroke-width="3"/>`,
+    blank:`<g fill="${K}"><circle cx="80" cy="83" r="4.5"/><circle cx="120" cy="83" r="4.5"/></g>`
+  }[m]||"";
+  const mouth=(m==="hype"||m==="panic")?`<ellipse cx="100" cy="106" rx="8" ry="6" fill="#7a2d0a" stroke="${K}" stroke-width="3"/>`:"";
+  const flat=m==="blank"?`<path d="M90 112h20" stroke="${K}" stroke-width="4" stroke-linecap="round"/>`:"";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="${size}" height="${size}">
+  <ellipse cx="100" cy="188" rx="46" ry="5" fill="#ffffff22"/>
+  <ellipse cx="76" cy="176" rx="15" ry="8" fill="#FF8A2B" ${st}/><ellipse cx="124" cy="176" rx="15" ry="8" fill="#FF8A2B" ${st}/>
+  <ellipse cx="100" cy="142" rx="40" ry="35" fill="${Y}" ${st}/><ellipse cx="100" cy="150" rx="21" ry="19" fill="#FFF1B0"/>
+  <ellipse cx="52" cy="132" rx="17" ry="10" transform="rotate(-28 52 132)" fill="${Y}" ${st}/><ellipse cx="148" cy="132" rx="17" ry="10" transform="rotate(28 148 132)" fill="${Y}" ${st}/>
+  <path d="M96 30q-8-18 6-16q-2 8 8 14" fill="${Y}" ${st}/>
+  <circle cx="100" cy="82" r="58" fill="${Y}" ${st}/>
+  <ellipse cx="62" cy="97" rx="10" ry="7" fill="#FF9EB5"/><ellipse cx="138" cy="97" rx="10" ry="7" fill="#FF9EB5"/>
+  ${eyes}<ellipse cx="100" cy="94" rx="14" ry="9" fill="#FF8A2B" stroke="${K}" stroke-width="4"/>${mouth}${flat}</svg>`;
+}
+const $ = id => document.getElementById(id);
+const show = id => { document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); };
+const err = m => { $("err").textContent = m || ""; };
+let topic="", result=null, cardBlob=null;
+
+$("d-pick").innerHTML=duck("zen",150); $("d-rec").innerHTML=duck("zen",120); $("d-load").innerHTML=duck("panic",150);
+
+function renderTopics(){
+  $("topics").innerHTML="";
+  [...POOL].sort(()=>Math.random()-.5).slice(0,3).forEach(t=>{
+    const b=document.createElement("button"); b.className="topic"; b.textContent=t; b.onclick=()=>pick(t); $("topics").appendChild(b);
+  });
+}
+renderTopics(); $("shuffle").onclick=renderTopics;
+$("free-btn").onclick=()=>pick("Free topic: talk about anything you want");
+function pick(t){ err(); topic=t; $("echo").textContent=t.startsWith("Free topic")?"Talk about anything. Your call.":t; show("s-rec"); }
+
+// ---- recording ----
+let rec,chunks=[],stream,timerId,secs=0,on=false,mime="";
+$("rec").onclick=()=>on?stop():start();
+async function start(){
+  err();
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    mime=["audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus","audio/mp4"].find(t=>MediaRecorder.isTypeSupported(t))||"";
+    rec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream); chunks=[];
+    rec.addEventListener("dataavailable",e=>{ if(e.data&&e.data.size>0) chunks.push(e.data); });
+    rec.addEventListener("stop",()=>{
+      const type=mime||"audio/webm", blob=new Blob(chunks,{type});
+      if(secs<5||blob.size===0){ err("That was too short. Talk for at least 10 seconds."); reset(); return; }
+      send(blob,type);
+    });
+    rec.start(1000); on=true; secs=0; $("timer").textContent="0:00";
+    $("rec").classList.add("on"); $("hint").textContent="Recording. Tap to finish."; $("d-rec").innerHTML=duck("hype",120);
+    timerId=setInterval(()=>{ secs++; $("timer").textContent=Math.floor(secs/60)+":"+String(secs%60).padStart(2,"0"); if(secs>=60) stop(); },1000);
+  }catch(e){ err("Mic blocked. Allow microphone access in your browser and try again."); }
+}
+function stop(){ if(!on) return; on=false; clearInterval(timerId); $("rec").classList.remove("on"); rec.stop(); stream.getTracks().forEach(t=>t.stop()); }
+function reset(){ $("timer").textContent="0:00"; $("hint").textContent="Tap to start. Talk for 20 to 60 seconds."; $("d-rec").innerHTML=duck("zen",120); }
+
+// ---- send ----
+const LINES=["Counting your ums...","Judging your pacing...","Checking if you made a point...","Asking the group chat...","Finding your type..."];
+async function send(blob,type){
+  show("s-load"); let i=0; $("load-line").textContent=LINES[0];
+  const li=setInterval(()=>{ i=(i+1)%LINES.length; $("load-line").textContent=LINES[i]; },1300);
+  const ext=type.includes("mp4")?"mp4":type.includes("ogg")?"ogg":"webm";
+  const fd=new FormData(); fd.append("prompt",topic); fd.append("audio",blob,"talk."+ext);
+  try{
+    const [res]=await Promise.all([fetch(BACKEND_URL+"/analyze",{method:"POST",body:fd}),new Promise(r=>setTimeout(r,4500))]);
+    if(!res.ok) throw new Error("Server said "+res.status);
+    await render(await res.json());
+  }catch(e){ show("s-pick"); err("Something broke on our end. Try again. ("+e.message+")"); }
+  clearInterval(li); reset();
+}
+
+// ---- the card: drawn once, shown in-app AND shared ----
+function lines(x,text,maxW){ const out=[]; let l=""; for(const w of text.split(" ")){ const t=l+w+" "; if(x.measureText(t).width>maxW&&l){out.push(l.trim()); l=w+" ";} else l=t; } out.push(l.trim()); return out; }
+async function drawCard(r){
+  await Promise.all([document.fonts.load("100px 'Lilita One'"),document.fonts.load("800 40px 'Bricolage Grotesque'"),document.fonts.load("500 40px 'Bricolage Grotesque'")]);
+  const img=new Image(); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(duck(MOOD[r.arch]||"blank",440));
+  await new Promise(res=>{img.onload=res; img.onerror=res;});
+  const W=1080,H=1920,cv=document.createElement("canvas"); cv.width=W; cv.height=H; const x=cv.getContext("2d");
+  const L="'Lilita One',sans-serif", B="'Bricolage Grotesque',sans-serif", tc=TIER[r.t].c;
+  x.fillStyle="#0A0A0A"; x.fillRect(0,0,W,H);
+  x.fillStyle="rgba(255,217,59,0.10)"; for(let i=30;i<W;i+=54) for(let j=30;j<H;j+=54){ x.beginPath(); x.arc(i,j,2.5,0,7); x.fill(); }
+  // wordmark
+  x.font="84px "+L; x.textAlign="left"; const parts=[["rateme","#F5F5F0"],["talk","#FF8A2B"],[".lol","#F5F5F0"]];
+  let tw=parts.reduce((a,p)=>a+x.measureText(p[0]).width,0), px=(W-tw)/2; parts.forEach(p=>{ x.fillStyle=p[1]; x.fillText(p[0],px,150); px+=x.measureText(p[0]).width; });
+  // panel with sticker shadow
+  const P={x:70,y:215,w:940,h:1490,r:60};
+  x.fillStyle="#FF8A2B"; x.beginPath(); x.roundRect(P.x+20,P.y+20,P.w,P.h,P.r); x.fill();
+  x.fillStyle="#FFD93B"; x.beginPath(); x.roundRect(P.x,P.y,P.w,P.h,P.r); x.fill(); x.lineWidth=12; x.strokeStyle="#111"; x.stroke();
+  if(r.t==="Legendary"||r.t==="Secret"){ x.save(); x.beginPath(); x.roundRect(P.x,P.y,P.w,P.h,P.r); x.clip(); const cs=r.t==="Secret"?["#FF8A2B","#FF6BD6","#A78BFF"]:["#FF8A2B","#FFB020"]; for(let i=-40;i<1100;i+=48){ x.fillStyle=cs[(i/48+40/48|0)%cs.length]; x.beginPath(); x.moveTo(P.x+i,P.y+P.h-14); x.lineTo(P.x+i+48,P.y+P.h-14); x.lineTo(P.x+i+48+14,P.y+P.h); x.lineTo(P.x+i+14,P.y+P.h); x.fill(); } x.restore(); }
+  // tier pill
+  x.font="800 36px "+B; const tt=r.t.toUpperCase(), pw=x.measureText(tt).width+70;
+  x.fillStyle="#111"; x.beginPath(); x.roundRect(P.x+50,P.y+50,pw,72,36); x.fill(); x.fillStyle=tc; x.textAlign="left"; x.fillText(tt,P.x+85,P.y+99);
+  // duck
+  x.drawImage(img,(W-440)/2,P.y+110,440,440);
+  // archetype
+  x.textAlign="center"; x.fillStyle="#111"; const nm=r.arch.toUpperCase(), fs=nm.length>22?78:96; x.font=fs+"px "+L;
+  let y=P.y+660; lines(x,nm,820).forEach(l=>{ x.fillText(l,W/2,y); y+=fs*1.02; });
+  // score
+  x.font="220px "+L; const sc=String(r.score), sw=x.measureText(sc).width; x.font="64px "+L; const dw=x.measureText("/100").width;
+  const sx=(W-(sw+dw+16))/2; x.textAlign="left"; x.font="220px "+L; x.fillText(sc,sx,P.y+940); x.font="64px "+L; x.fillText("/100",sx+sw+16,P.y+940);
+  // stats
+  const S=[["Conviction",r.c],["Energy",r.e],["Clarity",r.cl],["Warmth",r.w]];
+  S.forEach((s,i)=>{ const bx=P.x+60+(i%2)*430, by=P.y+985+Math.floor(i/2)*92;
+    x.fillStyle="#111"; x.beginPath(); x.roundRect(bx,by,400,76,38); x.fill();
+    x.fillStyle="#F5F5F0"; x.font="500 30px "+B; x.textAlign="left"; x.fillText(s[0],bx+32,by+49);
+    x.fillStyle="#FFD93B"; x.font="800 38px "+B; x.textAlign="right"; x.fillText(String(s[1]),bx+368,by+52); });
+  // roast
+  x.textAlign="center"; x.fillStyle="#111"; x.font="800 44px "+B; let ry=P.y+1215;
+  lines(x,"\u201C"+r.roast+"\u201D",800).slice(0,4).forEach(l=>{ x.fillText(l,W/2,ry); ry+=58; });
+  x.font="800 32px "+B; x.fillText("Only "+r.pct+"% of people get "+r.arch,W/2,P.y+P.h-48);
+  // footer
+  x.fillStyle="#F5F5F0"; x.font="500 40px "+B; x.fillText("Get yours at ratemetalk.lol",W/2,1812);
+  return cv;
+}
+async function render(d){
+  const t=TIER[d.tier]?d.tier:"Common", score=Math.round((d.conviction+d.energy+d.clarity+d.warmth)/4);
+  result={t,score,arch:d.archetype,c:d.conviction,e:d.energy,cl:d.clarity,w:d.warmth,roast:d.one_liner,pct:TIER[t].pct};
+  const cv=await drawCard(result);
+  cardBlob=await new Promise(r=>cv.toBlob(r,"image/png"));
+  $("cardimg").src=cv.toDataURL("image/png"); show("s-res");
+}
+$("again").onclick=()=>location.reload();
+$("share").onclick=async()=>{
+  const file=new File([cardBlob],"ratemetalk.png",{type:"image/png"});
+  const text="I got "+result.arch+" ("+result.score+"/100) on ratemetalk.lol. Beat that.";
+  if(navigator.canShare&&navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],text}); return; }catch(e){ if(e.name==="AbortError") return; } }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(cardBlob); a.download="ratemetalk.png"; a.click();
+};
+</script>
+</body>
+</html>
